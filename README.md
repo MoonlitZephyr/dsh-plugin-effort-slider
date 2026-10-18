@@ -51,3 +51,9 @@ cd "$env:USERPROFILE\.dsh\profiles\web"; pnpm install --frozen-lockfile
 ## License
 
 MIT
+
+## 兼容性（dsh 0.2.x / 桌面版）
+
+- 要求 dsh `>=0.2.1-rc.2 <0.3.0`（`engines.dsh`）。旧版 0.1.0-rc.x 会被 profile 的兼容性闸门直接跳过。
+- 自带 `cordis.patch.yml`（`dsh.bundle.patch`）：包名进入 `dsh.profile.bundles` 即完成装配，不再手写 insert。
+- web profile 与桌面版共用同一套 web 前端（桌面版页面源是 `dsh-app://app`，未知路径由主进程转发到本地 host），所以纯客户端插件两边行为一致。

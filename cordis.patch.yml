@@ -1,0 +1,11 @@
+# dsh-plugin-effort-slider bundle patch: contributes the plugin row into the
+# host composition when this package is listed in `dsh.profile.bundles`.
+#
+# The plugin is CLIENT-ONLY: its host half is an empty shell that exists so the
+# package shows up in the host composition; the browser half is discovered from
+# `dsh.client` and served by the client-module system. It must never live inside
+# an agent preset.
+
+- insert:
+    - id: effort-slider
+      name: 'dsh-plugin-effort-slider'
