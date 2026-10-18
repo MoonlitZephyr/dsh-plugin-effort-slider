@@ -57,3 +57,16 @@ MIT
 - 要求 dsh `>=0.2.1-rc.2 <0.3.0`（`engines.dsh`）。旧版 0.1.0-rc.x 会被 profile 的兼容性闸门直接跳过。
 - 自带 `cordis.patch.yml`（`dsh.bundle.patch`）：包名进入 `dsh.profile.bundles` 即完成装配，不再手写 insert。
 - web profile 与桌面版共用同一套 web 前端（桌面版页面源是 `dsh-app://app`，未知路径由主进程转发到本地 host），所以纯客户端插件两边行为一致。
+
+## 变更记录
+
+### 1.2.0 — 修复模型选择器消失
+
+- 座位注册改为 `ctx.inject(['slots'], …)`，且 `modelDirectories` 改为**每次 inject 时惰性获取**。
+  之前是在 `apply()` 里取一次：0.2.1 下 `@deepseek-ai/dsh-client-ui-model-selection` 的客户端插件
+  比本插件后挂载，取到 `undefined` → 返回 `available: false` → 组件 `return null`，
+  而本插件在 `conversation.input.model`（single，priority -1）上**顶掉了内置座位**，
+  于是整个模型选择器消失。
+- 兜底：拿不到目录服务或 `directoryFor` 抛错时返回 `degraded: true`，渲染一个可点击的
+  「模型」占位按钮而不是 `null`；子智能体会话仍按内置行为隐藏。
+- 自检：`tools/test-effort-slider.mjs`（4 项，含旧包回归对照）。

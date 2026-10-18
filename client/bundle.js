@@ -359,8 +359,18 @@ void main(){
       const timer = props.timer
       const theme = props.theme
       const onThemeChange = props.onThemeChange
-      const [state, setState] = React.useState(function () { return directory.getSnapshot() })
-      React.useEffect(function () { return directory.subscribe(function () { setState(directory.getSnapshot()) }) }, [directory])
+      const [state, setState] = React.useState(function () {
+        try { return directory.getSnapshot() } catch (e) { return { groups: [], current: null, status: 'idle' } }
+      })
+      React.useEffect(function () {
+        let unsubscribe
+        try {
+          unsubscribe = directory.subscribe(function () {
+            try { setState(directory.getSnapshot()) } catch (e) { /* unreadable store */ }
+          })
+        } catch (e) { /* store handle unavailable */ }
+        return typeof unsubscribe === 'function' ? unsubscribe : undefined
+      }, [directory])
       const [open, setOpen] = React.useState(false)
       const [pane, setPane] = React.useState('root')
       const rootRef = React.useRef(null)
@@ -392,7 +402,7 @@ void main(){
           if (current !== null && current.provider === g.id && current.model === m.id) curModelObj = { group: g, model: m }
         }
       }
-      const modelLabel = curModelObj ? curModelObj.model.name : '选择模型'
+      const modelLabel = curModelObj ? curModelObj.model.name : (props.degraded === true ? '模型' : '选择模型')
       const efforts = curModelObj && curModelObj.model.reasoning ? (curModelObj.model.reasoning.efforts || []) : []
       const currentEffortId = current ? current.reasoningEffort : undefined
       const curEffort = efforts.find(function (e) { return e.id === currentEffortId })
@@ -450,10 +460,6 @@ void main(){
     }
 
     function apply(ctx) {
-      const slots = ctx.get('slots')
-      if (slots === undefined) return
-      const models = ctx.get('modelDirectories')
-      const sessions = ctx.get('sessions')
       const theme = ctx.get('theme')
       ctx.effect(function () {
         const tag = document.createElement('style')
@@ -462,26 +468,60 @@ void main(){
         document.head.appendChild(tag)
         return function () { tag.remove() }
       })
-      slots.inject('conversation.input.model', function () {
-        return slots.register({
-          name: 'conversation.input.model',
-          priority: -1,
-          registrant: 'dsh-plugin-effort-slider',
-          inject: function (sessionId) {
-            if (models === undefined) {
-              return { available: false, directory: { subscribe: function () { return function () {} }, getSnapshot: function () { return { groups: [], current: null, status: 'idle', failures: [], error: null } } }, load: function () {}, select: function () { return Promise.resolve(false) } }
-            }
-            const directory = models.directoryFor(sessionId)
-            const subagent = sessions !== undefined && typeof sessions.subagentAddress === 'function' ? sessions.subagentAddress(sessionId) : undefined
-            const available = subagent === undefined
-            return {
-              available: available,
-              directory: directory.store,
-              load: function () { if (available) directory.load().catch(function () {}) },
-              select: function (selection) { return available ? directory.select(selection).then(function () { return true }, function () { return false }) : Promise.resolve(false) },
-            }
-          },
-        }, function (p) { return React.createElement(ModelEffortSelect, { locked: p.locked, available: p.available, directory: p.directory, load: p.load, select: p.select, timer: ctx.timer, theme: theme, onThemeChange: function (fn) { return ctx.on('theme/change', fn) } }) })
+      // Register only once the client slot service exists (client module load
+      // order is not guaranteed), and resolve the model directory lazily so a
+      // late-provided service still reaches the seat. Subagent seats stay
+      // hidden exactly like the built-in seat; a missing directory degrades to
+      // a clickable placeholder instead of rendering nothing.
+      ctx.inject(['slots'], function (scope) {
+        scope.slots.inject('conversation.input.model', function () {
+          return scope.slots.register({
+            name: 'conversation.input.model',
+            priority: -1,
+            registrant: 'dsh-plugin-effort-slider',
+            inject: function (sessionId) {
+              const stub = {
+                subscribe: function () { return function () {} },
+                getSnapshot: function () { return { groups: [], current: null, status: 'idle', failures: [], error: null } },
+              }
+              const sessions = ctx.get('sessions')
+              const subagent = sessions !== undefined && typeof sessions.subagentAddress === 'function' ? sessions.subagentAddress(sessionId) : undefined
+              if (subagent !== undefined) {
+                return { available: false, degraded: false, directory: stub, load: function () {}, select: function () { return Promise.resolve(false) } }
+              }
+              const models = ctx.get('modelDirectories')
+              if (models === undefined) {
+                return { available: true, degraded: true, directory: stub, load: function () {}, select: function () { return Promise.resolve(false) } }
+              }
+              try {
+                const directory = models.directoryFor(sessionId)
+                return {
+                  available: true,
+                  degraded: false,
+                  directory: directory.store,
+                  load: function () { try { directory.load().catch(function () {}) } catch (e) {} },
+                  select: function (selection) {
+                    try { return directory.select(selection).then(function () { return true }, function () { return false }) } catch (e) { return Promise.resolve(false) }
+                  },
+                }
+              } catch (e) {
+                return { available: true, degraded: true, directory: stub, load: function () {}, select: function () { return Promise.resolve(false) } }
+              }
+            },
+          }, function (p) {
+            return React.createElement(ModelEffortSelect, {
+              locked: p.locked,
+              available: p.available,
+              degraded: p.degraded === true,
+              directory: p.directory,
+              load: p.load,
+              select: p.select,
+              timer: ctx.timer,
+              theme: theme,
+              onThemeChange: function (fn) { return ctx.on('theme/change', fn) },
+            })
+          })
+        })
       })
     }
 

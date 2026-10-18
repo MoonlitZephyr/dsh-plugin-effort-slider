@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-effort-slider",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "仿 Claude Code 的思考强度滑块：点击模型座位弹出蓝色火焰滑块，真实调整 reasoningEffort（off/high/max），明暗主题自适应。",
   "license": "MIT",
   "repository": {
