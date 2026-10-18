@@ -420,6 +420,7 @@ void main(){
       return React.createElement('div', { ref: rootRef, className: 'dsh-eff-root', tabIndex: -1 },
         React.createElement('button', {
           type: 'button', className: 'dsh-eff-trigger', disabled: locked, 'aria-haspopup': 'menu', 'aria-expanded': open,
+          title: modelLabel + (effortLabel === undefined ? '' : ' · ' + effortLabel),
           onClick: function () { if (open) setOpen(false); else { setPane('root'); setOpen(true); load() } },
         },
           React.createElement('span', { className: 'dsh-eff-triggerLabel' }, modelLabel),
@@ -474,10 +475,11 @@ void main(){
       // hidden exactly like the built-in seat; a missing directory degrades to
       // a clickable placeholder instead of rendering nothing.
       ctx.inject(['slots'], function (scope) {
-        scope.slots.inject('conversation.input.model', function () {
+        scope.slots.inject('conversation.input.right', function () {
           return scope.slots.register({
-            name: 'conversation.input.model',
-            priority: -1,
+            name: 'conversation.input.right',
+            id: 'effort-slider',
+            order: 20,
             registrant: 'dsh-plugin-effort-slider',
             inject: function (sessionId) {
               const stub = {

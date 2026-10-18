@@ -70,3 +70,12 @@ MIT
 - 兜底：拿不到目录服务或 `directoryFor` 抛错时返回 `degraded: true`，渲染一个可点击的
   「模型」占位按钮而不是 `null`；子智能体会话仍按内置行为隐藏。
 - 自检：`tools/test-effort-slider.mjs`（4 项，含旧包回归对照）。
+
+### 1.3.0 — 从「模型座位」搬到输入框右侧的小胶囊
+
+- 不再注册 `conversation.input.model`（内置模型座位所在槽位，之前用 priority -1 顶替），改为注册
+  `conversation.input.right`（list，session 作用域）里的一个胶囊按钮：内置模型选择器完全不碰。
+- 胶囊显示「模型 · 思考强度」，点开是同一个面板（火焰滑块 + 模型列表），菜单向上弹出。
+- 子智能体会话仍然隐藏；服务未就绪/目录异常时显示降级胶囊而不是空白。
+- 自检：`tools/test-effort-slider.mjs` 增加一条断言 —— 只注册 `conversation.input.right`，
+  绝不再碰 `conversation.input.model`。
