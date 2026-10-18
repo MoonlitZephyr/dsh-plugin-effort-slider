@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "description": "仿 Claude Code 的思考强度滑块：点击模型座位弹出蓝色火焰滑块，真实调整 reasoningEffort（off/high/max），明暗主题自适应。",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MoonlitZephyr/dsh-plugin-effort-slider.git"
+  },
+  "homepage": "https://github.com/MoonlitZephyr/dsh-plugin-effort-slider#readme",
+  "bugs": {
+    "url": "https://github.com/MoonlitZephyr/dsh-plugin-effort-slider/issues"
+  },
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
@@ -18,6 +26,9 @@
     "src",
     "client"
   ],
+  "scripts": {
+    "check": "node --check src/index.js && node --check client/bundle.js"
+  },
   "engines": {
     "node": ">=20"
   }
